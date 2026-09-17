@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  BillGuard read-only access role. Lets BillGuard scan this account for
+  forgotten billable resources. It cannot create, change, or delete anything.
+  Delete this stack at any time to revoke access.
+
+Parameters:
+  ExternalId:
+    Type: String
+    Description: Unique ID provided by BillGuard. Do not change it.
+    MinLength: 8
+    MaxLength: 128
+    AllowedPattern: "[a-zA-Z0-9=,.@:/_-]+"
+    NoEcho: true
+
+  TrustedPrincipalArn:
+    Type: String
+    Description: The BillGuard scanner identity allowed to use this role. Do not change it.
+    AllowedPattern: "arn:aws:iam::[0-9]{12}:(root|role/.+)"
+
+Resources:
+  BillGuardReadOnlyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: BillGuardReadOnly
+      Description: Read-only access for BillGuard to find forgotten billable resources
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Ref TrustedPrincipalArn
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref ExternalId
+      Policies:
+        - PolicyName: BillGuardReadOnlyScan
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: ScanBillableResources
+                Effect: Allow
+                Action:
+                  - ec2:DescribeRegions
+                  - ec2:DescribeInstances
+                  - ec2:DescribeVolumes
+                  - ec2:DescribeAddresses
+                  - ec2:DescribeNatGateways
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - rds:DescribeDBInstances
+                  - es:ListDomainNames
+                  - es:DescribeDomains
+                  - sagemaker:ListEndpoints
+                  - sagemaker:ListNotebookInstances
+                  - eks:ListClusters
+                Resource: "*"
+              - Sid: ReadMonthToDateSpend
+                Effect: Allow
+                Action:
+                  - ce:GetCostAndUsage
+                Resource: "*"
+
+Outputs:
+  RoleArn:
+    Description: Copy this value and paste it into BillGuard
+    Value: !GetAtt BillGuardReadOnlyRole.Arn
