@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  BillGuard backend (task 5): Cognito auth, the DynamoDB single table, and
+  the HTTP API with its first two Lambdas.
+
+Globals:
+  Function:
+    Runtime: python3.13
+    Timeout: 10
+    MemorySize: 128
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref BillGuardTable
+
+Resources:
+
+  # -- Auth: who is allowed to call the API -----------------------------
+
+  BillGuardUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: BillGuardUserPool
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: false
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+
+  BillGuardUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: BillGuardWebClient
+      UserPoolId: !Ref BillGuardUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
+  # -- Data: the single DynamoDB table -----------------------------------
+
+  BillGuardTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: BillGuardTable
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: StatusIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  # -- API: HTTP API in front of the Lambdas, guarded by Cognito ---------
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: $default
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowHeaders:
+          - Authorization
+          - Content-Type
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            JwtConfiguration:
+              issuer: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${BillGuardUserPool}
+              audience:
+                - !Ref BillGuardUserPoolClient
+            IdentitySource: "$request.header.Authorization"
+        DefaultAuthorizer: CognitoAuthorizer
+
+  ConnectInitFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/connect_init/
+      Handler: app.handler
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref BillGuardTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /connect/init
+            Method: POST
+
+  FindingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/findings/
+      Handler: app.handler
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /findings
+            Method: GET
+
+Outputs:
+  ApiUrl:
+    Description: Base URL of the HTTP API
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/
+  UserPoolId:
+    Description: Cognito User Pool ID (Madhu needs this for Amplify Auth)
+    Value: !Ref BillGuardUserPool
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID (Madhu needs this for Amplify Auth)
+    Value: !Ref BillGuardUserPoolClient
+  TableName:
+    Description: DynamoDB table name
+    Value: !Ref BillGuardTable
