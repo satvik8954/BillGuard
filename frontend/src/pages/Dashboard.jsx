@@ -2,6 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { api } from "../api.js";
+import { useTickingValue } from "../hooks/useTickingValue.js";
+
+// Same acceleration used on the landing page's example: roughly a "day"
+// of cost every 14 real seconds, so the total visibly keeps moving.
+const TICK_ACCELERATION = 1 / 14;
 
 function formatInr(amount) {
   return amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -60,7 +65,8 @@ export default function Dashboard({ signOut }) {
 
   const active = findings.filter((f) => f.status === "active");
   const resolved = findings.filter((f) => f.status !== "active");
-  const total = active.reduce((sum, f) => sum + f.estDailyCostInr, 0);
+  const baseTotal = active.reduce((sum, f) => sum + f.estDailyCostInr, 0);
+  const total = useTickingValue(baseTotal, baseTotal * TICK_ACCELERATION);
 
   return (
     <div className="page">
@@ -130,29 +136,15 @@ export default function Dashboard({ signOut }) {
 
         {!loading && !loadError && (
           <>
-            <div
-              className="panel"
-              style={{
-                marginBottom: 36,
-                display: "flex",
-                alignItems: "baseline",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: 12,
-              }}
-            >
-              <div>
-                <div style={{ fontSize: "2.2rem", color: "var(--amber)", fontWeight: 600 }}>
-                  ₹{formatInr(total)}
-                  <span className="text-small text-faint" style={{ marginLeft: 6 }}>
-                    / day
-                  </span>
-                </div>
-                <p className="text-small text-muted" style={{ marginTop: 4 }}>
-                  still on the clock across {active.length}{" "}
-                  {active.length === 1 ? "thing" : "things"}
-                </p>
+            <div className="total-banner">
+              <div className="total-figure">
+                ₹{formatInr(total)}
+                <span className="unit">/ day</span>
               </div>
+              <p className="text-muted" style={{ marginTop: 10, fontSize: "1rem" }}>
+                still on the clock across {active.length}{" "}
+                {active.length === 1 ? "thing" : "things"}
+              </p>
             </div>
 
             {active.length === 0 ? (

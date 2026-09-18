@@ -4,39 +4,45 @@
    Concept: a night monitoring console. Something is still running,
    unnoticed, in the dark — that's the whole product. Amber = a light
    left on (cost, attention). Teal = verified safe (read-only, revocable).
-   Serif (Fraunces) is the human voice explaining things; monospace
-   (IBM Plex Mono) is the machine's readout — resource IDs, regions,
-   money. The two voices never mix inside one text block.
+   One typeface, Montserrat, carries the whole page — heavy weights
+   (800/900) for the loud moments, mid weights for the machine's
+   readout (resource IDs, regions, money), regular for prose.
+
+   The one bold move, spent everywhere the same way: numbers that visibly
+   climb. The whole product's promise is "this hasn't stopped costing
+   you money" — so every ₹/day figure on the site actually ticks upward
+   in real time instead of sitting still.
    ===================================================================== */
 
 :root {
-  --bg: #10141a;
-  --surface: #1a2029;
-  --surface-raised: #222a34;
-  --border: #2a323d;
-  --border-soft: #212832;
+  --bg: #0a0d12;
+  --surface: #171d25;
+  --surface-raised: #202834;
+  --border: #2c3542;
+  --border-soft: #1f2630;
 
-  --text: #ece7dd;
-  --text-muted: #8b95a5;
-  --text-faint: #5b6472;
+  --text: #f3efe4;
+  --text-muted: #8e98a9;
+  --text-faint: #565f70;
 
-  --amber: #e8a23d;
-  --amber-soft: #7a5a2e;
-  --amber-wash: rgba(232, 162, 61, 0.1);
+  --amber: #ff9d3d;
+  --amber-hot: #ffc172;
+  --amber-soft: #8a5220;
+  --amber-wash: rgba(255, 157, 61, 0.12);
 
-  --teal: #5fbfae;
-  --teal-soft: #2f5750;
-  --teal-wash: rgba(95, 191, 174, 0.1);
+  --teal: #4fd8c0;
+  --teal-soft: #245349;
+  --teal-wash: rgba(79, 216, 192, 0.1);
 
-  --rust: #d9704f;
-  --rust-wash: rgba(217, 112, 79, 0.12);
+  --rust: #ff6b4a;
+  --rust-wash: rgba(255, 107, 74, 0.14);
 
-  --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-display: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Montserrat", ui-sans-serif, system-ui, sans-serif;
 
-  --radius: 3px;
-  --measure: 64ch;
-  --container: 1040px;
+  --radius: 4px;
+  --measure: 62ch;
+  --container: 1080px;
 }
 
 * {
@@ -63,8 +69,9 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: 500;
-  line-height: 1.15;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
   margin: 0;
   color: var(--text);
 }
@@ -76,6 +83,15 @@ p {
 
 a {
   color: inherit;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  background: var(--surface-raised);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 0.92em;
 }
 
 button {
@@ -113,14 +129,14 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 22px 0;
+  padding: 24px 0;
 }
 
 .wordmark {
   font-family: var(--font-display);
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .wordmark .dot {
@@ -150,21 +166,22 @@ button {
    ------------------------------------------------------------------- */
 
 .text-hero {
-  font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+  font-size: clamp(3.1rem, 8.4vw, 6.6rem);
+  letter-spacing: -0.02em;
 }
 
 .text-h2 {
-  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-size: clamp(1.7rem, 3.2vw, 2.4rem);
 }
 
 .text-h3 {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
 }
 
 .text-lede {
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   color: var(--text-muted);
-  line-height: 1.7;
+  line-height: 1.65;
 }
 
 .text-muted {
@@ -185,18 +202,23 @@ button {
 
 .btn {
   font-family: var(--font-mono);
-  font-size: 0.92rem;
-  font-weight: 500;
+  font-size: 0.98rem;
+  font-weight: 600;
   border-radius: var(--radius);
-  padding: 12px 20px;
+  padding: 16px 28px;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease,
+    box-shadow 0.15s ease, transform 0.1s ease;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   text-decoration: none;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .btn:disabled {
@@ -206,12 +228,14 @@ button {
 
 .btn-primary {
   background: var(--amber);
-  color: #17120a;
+  color: #1a1006;
   border-color: var(--amber);
+  box-shadow: 0 0 0 0 rgba(255, 157, 61, 0.5), 0 12px 32px -12px rgba(255, 157, 61, 0.55);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #f0ac4c;
+  background: var(--amber-hot);
+  box-shadow: 0 0 0 0 rgba(255, 157, 61, 0.5), 0 16px 40px -12px rgba(255, 157, 61, 0.7);
 }
 
 .btn-outline {
@@ -228,6 +252,7 @@ button {
   background: transparent;
   color: var(--text-muted);
   padding: 8px 4px;
+  font-weight: 500;
 }
 
 .btn-quiet:hover:not(:disabled) {
@@ -251,12 +276,12 @@ button {
 
 .field input {
   font-family: var(--font-mono);
-  font-size: 0.95rem;
+  font-size: 0.98rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text);
-  padding: 12px 14px;
+  padding: 14px 16px;
 }
 
 .field input:focus {
@@ -286,71 +311,116 @@ button {
 }
 
 /* ---------------------------------------------------------------------
-   The hero finding card — the one bold, glowing moment on the landing
-   page. Nothing else on the site glows like this.
+   Hero stage — one dramatic, centered moment: headline, then the
+   glowing ticking finding card as visual proof, then the ask.
    ------------------------------------------------------------------- */
+
+.hero-stage {
+  position: relative;
+  padding: 88px 0 96px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero-stage::before {
+  content: "";
+  position: absolute;
+  top: -220px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 900px;
+  height: 560px;
+  background: radial-gradient(ellipse at center, rgba(255, 157, 61, 0.16), transparent 65%);
+  pointer-events: none;
+}
+
+.hero-stage .text-hero {
+  max-width: 15ch;
+  position: relative;
+}
+
+.hero-stage .text-lede {
+  max-width: 52ch;
+  margin: 28px auto 0;
+  position: relative;
+}
+
+.hero-actions {
+  margin-top: 40px;
+  position: relative;
+}
+
+/* The hero finding card — the one bold, glowing moment on the page.
+   Its cost figure actually ticks upward. Nothing else glows like this. */
 
 .hero-finding {
   background: var(--surface);
   border: 1px solid var(--amber-soft);
-  border-radius: var(--radius);
-  padding: 20px 22px;
-  box-shadow: 0 0 0 1px rgba(232, 162, 61, 0.05), 0 18px 60px -20px rgba(232, 162, 61, 0.35);
+  border-radius: 8px;
+  padding: 30px 40px;
+  box-shadow: 0 0 0 1px rgba(255, 157, 61, 0.08), 0 30px 90px -24px rgba(255, 157, 61, 0.5);
   width: 100%;
-  max-width: 380px;
-}
-
-.hero-finding .row-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 14px;
+  max-width: 480px;
+  margin: 48px auto 0;
+  position: relative;
 }
 
 .hero-finding .kind {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
 }
 
 .hero-finding .cost {
-  font-size: 1.4rem;
+  font-family: var(--font-mono);
+  font-size: clamp(2.6rem, 6vw, 3.6rem);
   color: var(--amber);
   font-weight: 600;
+  text-shadow: 0 0 42px rgba(255, 157, 61, 0.45);
+  line-height: 1;
 }
 
-.hero-finding .cost span {
-  font-size: 0.75rem;
+.hero-finding .cost .unit {
+  font-size: 1rem;
   color: var(--amber-soft);
-  margin-left: 4px;
+  margin-left: 6px;
+  font-weight: 500;
+  text-shadow: none;
 }
 
 .hero-finding .meta {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   color: var(--text-faint);
   display: flex;
-  gap: 10px;
+  justify-content: center;
+  gap: 14px;
   flex-wrap: wrap;
+  margin-top: 18px;
 }
 
-.pulse-dot {
+.live-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--amber);
   display: inline-block;
-  box-shadow: 0 0 0 0 rgba(232, 162, 61, 0.6);
-  animation: pulse 2.4s ease-in-out infinite;
+  animation: livepulse 1.4s ease-in-out infinite;
 }
 
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(232, 162, 61, 0.45);
-  }
-  70% {
-    box-shadow: 0 0 0 8px rgba(232, 162, 61, 0);
-  }
+@keyframes livepulse {
+  0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(232, 162, 61, 0);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
   }
 }
 
@@ -368,7 +438,7 @@ button {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 4px 20px;
-  padding: 18px 20px;
+  padding: 20px 22px;
   border-bottom: 1px solid var(--border-soft);
   align-items: start;
 }
@@ -379,12 +449,12 @@ button {
 
 .finding-row .type {
   font-family: var(--font-display);
-  font-size: 1.02rem;
-  font-weight: 500;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .finding-row .cost {
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   color: var(--amber);
   font-weight: 600;
   text-align: right;
@@ -415,11 +485,40 @@ button {
 }
 
 .finding-row.resolved {
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .finding-row.resolved .cost {
   color: var(--text-faint);
+}
+
+/* ---------------------------------------------------------------------
+   Dashboard total — the payoff moment, big and glowing, also ticking
+   ------------------------------------------------------------------- */
+
+.total-banner {
+  border: 1px solid var(--amber-soft);
+  border-radius: 8px;
+  background: radial-gradient(ellipse at top left, rgba(255, 157, 61, 0.1), var(--surface) 60%);
+  padding: 40px 36px;
+  margin-bottom: 40px;
+}
+
+.total-figure {
+  font-family: var(--font-mono);
+  font-size: clamp(2.6rem, 7vw, 4.2rem);
+  color: var(--amber);
+  font-weight: 600;
+  line-height: 1;
+  text-shadow: 0 0 50px rgba(255, 157, 61, 0.4);
+}
+
+.total-figure .unit {
+  font-size: 1.1rem;
+  color: var(--amber-soft);
+  margin-left: 8px;
+  font-weight: 500;
+  text-shadow: none;
 }
 
 /* ---------------------------------------------------------------------
@@ -431,7 +530,8 @@ button {
   align-items: center;
   gap: 6px;
   font-size: 0.78rem;
-  padding: 4px 10px;
+  font-weight: 500;
+  padding: 5px 12px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   color: var(--text-muted);
@@ -455,18 +555,20 @@ button {
 
 .step {
   display: grid;
-  grid-template-columns: 34px 1fr;
-  gap: 18px;
+  grid-template-columns: 40px 1fr;
+  gap: 20px;
 }
 
 .step .index {
   font-family: var(--font-display);
-  font-size: 1.1rem;
+  font-weight: 600;
+  font-size: 1.2rem;
   color: var(--amber);
   border: 1px solid var(--amber-soft);
+  background: var(--amber-wash);
   border-radius: 50%;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -557,8 +659,8 @@ button {
   --amplify-colors-border-secondary: var(--border);
   --amplify-fonts-default-variable: var(--font-mono);
   --amplify-fonts-default-static: var(--font-mono);
-  --amplify-radii-small: 3px;
-  --amplify-radii-medium: 3px;
+  --amplify-radii-small: 4px;
+  --amplify-radii-medium: 4px;
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -607,8 +709,9 @@ button {
 
 [data-amplify-authenticator] .amplify-button--primary {
   background: var(--amber) !important;
-  color: #17120a !important;
+  color: #1a1006 !important;
   border-radius: var(--radius) !important;
+  font-weight: 600 !important;
 }
 
 [data-amplify-authenticator] .amplify-button--link {
@@ -620,32 +723,23 @@ button {
    ------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .pulse-dot,
+  .live-dot,
   .scan-sweep::after {
     animation: none;
-  }
-}
-
-.hero-grid {
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 56px;
-  align-items: center;
-}
-
-@media (max-width: 780px) {
-  .hero-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-grid > div:last-child {
-    justify-content: flex-start !important;
   }
 }
 
 @media (max-width: 640px) {
   .container {
     padding: 0 18px;
+  }
+
+  .hero-stage {
+    padding: 56px 0 64px;
+  }
+
+  .hero-finding {
+    padding: 26px 22px;
   }
 
   .finding-row {
@@ -656,7 +750,7 @@ button {
     text-align: left;
   }
 
-  .hero-finding {
-    max-width: none;
+  .total-banner {
+    padding: 28px 22px;
   }
 }

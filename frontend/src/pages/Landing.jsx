@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 
+import { useTickingValue } from "../hooks/useTickingValue.js";
+
 const RESOURCE_TYPES = [
   "EC2 instances, running or stopped",
   "Unattached EBS volumes",
@@ -12,7 +14,16 @@ const RESOURCE_TYPES = [
   "EKS clusters",
 ];
 
+function formatInr(amount) {
+  return amount.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 export default function Landing() {
+  // A concrete example, not a global claim: ₹10.56/day since this Elastic
+  // IP was found 4 days ago, ticking up live (accelerated for effect) —
+  // dramatizing the one thing this whole product is about.
+  const cost = useTickingValue(10.56 * 4, 10.56 / 14);
+
   return (
     <div className="page">
       <header className="container">
@@ -27,51 +38,44 @@ export default function Landing() {
       </header>
 
       <main className="container" style={{ paddingBottom: 96 }}>
-        <section
-          className="hero-grid"
-          style={{
-            paddingTop: 56,
-            paddingBottom: 64,
-          }}
-        >
-          <div className="stack gap-md">
-            <h1 className="text-hero">It's still running the meter.</h1>
-            <p className="text-lede">
-              Hackathon demos end. Free-tier trials expire. The test database, the spare Elastic
-              IP, the notebook you spun up at 2am — none of them know that. BillGuard checks every
-              region of your AWS account once a day and tells you exactly what's still costing
-              money, and how to turn it off.
-            </p>
-            <div>
-              <Link to="/connect" className="btn btn-primary">
-                Connect your AWS account
-              </Link>
+        <section className="hero-stage">
+          <h1 className="text-hero">It's still running the meter.</h1>
+          <p className="text-lede">
+            Hackathon demos end. Free-tier trials expire. The test database, the spare Elastic
+            IP, the notebook you spun up at 2am — none of them know that. BillGuard checks every
+            region of your AWS account, once a day, and tells you exactly what's still costing
+            money.
+          </p>
+
+          <div className="hero-finding">
+            <div className="kind">
+              <span className="live-dot" />
+              Unassociated Elastic IP · ap-south-1
+            </div>
+            <div className="cost">
+              ₹{formatInr(cost)}
+              <span className="unit">and counting</span>
+            </div>
+            <div className="meta">
+              <span>13.204.175.86</span>
+              <span>found 4 days ago</span>
+              <span>₹10.56 / day</span>
             </div>
           </div>
 
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <div className="hero-finding">
-              <div className="row-top">
-                <span className="kind">
-                  <span className="pulse-dot" style={{ marginRight: 8 }} />
-                  Unassociated Elastic IP
-                </span>
-              </div>
-              <div className="cost">
-                ₹10.56<span>/ day</span>
-              </div>
-              <div className="meta">
-                <span>ap-south-1</span>
-                <span>13.204.175.86</span>
-                <span>found 4 days ago</span>
-              </div>
-            </div>
+          <div className="hero-actions">
+            <Link to="/connect" className="btn btn-primary">
+              Connect your AWS account
+            </Link>
           </div>
         </section>
 
         <hr className="divider" />
 
-        <section className="stack gap-md" style={{ padding: "56px 0", maxWidth: 720 }}>
+        <section
+          className="stack gap-md"
+          style={{ padding: "72px 0", maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}
+        >
           <h2 className="text-h2">How it works</h2>
           <p className="text-lede">
             You connect a role that can only read — never start, stop, or delete anything.
@@ -83,7 +87,10 @@ export default function Landing() {
 
         <hr className="divider" />
 
-        <section className="stack gap-md" style={{ padding: "56px 0" }}>
+        <section
+          className="stack gap-md"
+          style={{ padding: "72px 0", maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}
+        >
           <h2 className="text-h2">What it looks for</h2>
           <ul
             className="text-muted"
@@ -93,11 +100,11 @@ export default function Landing() {
               margin: 0,
               padding: 0,
               listStyle: "none",
-              maxWidth: 640,
+              fontSize: "1.05rem",
             }}
           >
             {RESOURCE_TYPES.map((item) => (
-              <li key={item} style={{ marginBottom: 12, breakInside: "avoid" }}>
+              <li key={item} style={{ marginBottom: 14, breakInside: "avoid" }}>
                 {item}
               </li>
             ))}
@@ -106,7 +113,10 @@ export default function Landing() {
 
         <hr className="divider" />
 
-        <section className="stack gap-sm" style={{ padding: "56px 0", maxWidth: 640 }}>
+        <section
+          className="stack gap-sm"
+          style={{ padding: "72px 0", maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}
+        >
           <h2 className="text-h2">Read-only. Revocable anytime.</h2>
           <p className="text-lede">
             The role BillGuard uses lists an exact, narrow set of permissions — every one of them
@@ -117,7 +127,7 @@ export default function Landing() {
         </section>
       </main>
 
-      <footer className="container text-small text-faint" style={{ paddingBottom: 32 }}>
+      <footer className="container text-small text-faint" style={{ paddingBottom: 32, textAlign: "center" }}>
         Built for hackathon builders and students who'd rather not find out the hard way.
       </footer>
     </div>
