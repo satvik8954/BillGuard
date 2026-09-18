@@ -132,7 +132,7 @@ Resources:
           ROLE_TEMPLATE_URL: !Sub "https://${RoleTemplateBucket}.s3.${AWS::Region}.amazonaws.com/billguard-role.yaml"
           SCANNER_ROLE_ARN: !GetAtt ScannerFunctionRole.Arn
       Policies:
-        - DynamoDBWritePolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref BillGuardTable
       Events:
         Api:
