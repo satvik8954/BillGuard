@@ -1,5 +1,5 @@
 """
-BillGuard resource checks (tasks 3-4).
+BillGuard resource checks (tasks 3-4, made concurrent in the timeout fix).
 
 Pure scanning logic: given a session that's already inside the user's
 account (via assume_role), find billable leftovers. No CLI code and no
@@ -8,8 +8,16 @@ by the local CLI (scanner_local.py) and, later, by the ScanAccount
 Lambda (task 6) without changes.
 """
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
+
+# Every boto3 client this module creates uses this: a slow/unreachable AWS
+# endpoint must fail fast, not sit until the Lambda's own Timeout kills the
+# whole invocation with an unhelpful Sandbox.Timedout.
+BOTO_CONFIG = Config(connect_timeout=5, read_timeout=10)
 
 # Approximate prices (USD per hour), for resources with one flat rate
 # regardless of size/type. Update as needed.
@@ -93,7 +101,7 @@ def assume_role(
     function works unchanged from a Lambda.
     """
     caller_session = caller_session or boto3.Session()
-    creds = caller_session.client("sts").assume_role(
+    creds = caller_session.client("sts", config=BOTO_CONFIG).assume_role(
         RoleArn=role_arn,
         RoleSessionName="billguard-scan",
         ExternalId=external_id,
@@ -120,7 +128,7 @@ def gb_month_to_daily_inr(price_per_gb_month: float, size_gb: float) -> float:
 
 
 def check_unused_elastic_ips(session: boto3.Session, region: str) -> list[dict]:
-    ec2 = session.client("ec2", region_name=region)
+    ec2 = session.client("ec2", region_name=region, config=BOTO_CONFIG)
     findings = []
     for address in ec2.describe_addresses()["Addresses"]:
         if "AssociationId" not in address:
@@ -136,7 +144,7 @@ def check_unused_elastic_ips(session: boto3.Session, region: str) -> list[dict]:
 
 
 def check_ec2_instances(session: boto3.Session, region: str) -> list[dict]:
-    ec2 = session.client("ec2", region_name=region)
+    ec2 = session.client("ec2", region_name=region, config=BOTO_CONFIG)
     findings = []
     paginator = ec2.get_paginator("describe_instances")
     for page in paginator.paginate():
@@ -174,7 +182,7 @@ def check_ec2_instances(session: boto3.Session, region: str) -> list[dict]:
 
 
 def check_unattached_ebs_volumes(session: boto3.Session, region: str) -> list[dict]:
-    ec2 = session.client("ec2", region_name=region)
+    ec2 = session.client("ec2", region_name=region, config=BOTO_CONFIG)
     findings = []
     paginator = ec2.get_paginator("describe_volumes")
     for page in paginator.paginate(Filters=[{"Name": "status", "Values": ["available"]}]):
@@ -196,7 +204,7 @@ def check_unattached_ebs_volumes(session: boto3.Session, region: str) -> list[di
 
 
 def check_nat_gateways(session: boto3.Session, region: str) -> list[dict]:
-    ec2 = session.client("ec2", region_name=region)
+    ec2 = session.client("ec2", region_name=region, config=BOTO_CONFIG)
     findings = []
     paginator = ec2.get_paginator("describe_nat_gateways")
     for page in paginator.paginate(Filter=[{"Name": "state", "Values": ["available"]}]):
@@ -215,7 +223,7 @@ def check_nat_gateways(session: boto3.Session, region: str) -> list[dict]:
 def check_load_balancers(session: boto3.Session, region: str) -> list[dict]:
     findings = []
 
-    elbv2 = session.client("elbv2", region_name=region)
+    elbv2 = session.client("elbv2", region_name=region, config=BOTO_CONFIG)
     paginator = elbv2.get_paginator("describe_load_balancers")
     for page in paginator.paginate():
         for lb in page["LoadBalancers"]:
@@ -232,7 +240,7 @@ def check_load_balancers(session: boto3.Session, region: str) -> list[dict]:
                 "howToDelete": "EC2 console → Load Balancers → select it → Actions → Delete",
             })
 
-    elb = session.client("elb", region_name=region)
+    elb = session.client("elb", region_name=region, config=BOTO_CONFIG)
     paginator = elb.get_paginator("describe_load_balancers")
     for page in paginator.paginate():
         for lb in page["LoadBalancerDescriptions"]:
@@ -249,7 +257,7 @@ def check_load_balancers(session: boto3.Session, region: str) -> list[dict]:
 
 
 def check_rds_instances(session: boto3.Session, region: str) -> list[dict]:
-    rds = session.client("rds", region_name=region)
+    rds = session.client("rds", region_name=region, config=BOTO_CONFIG)
     findings = []
     paginator = rds.get_paginator("describe_db_instances")
     for page in paginator.paginate():
@@ -270,7 +278,7 @@ def check_rds_instances(session: boto3.Session, region: str) -> list[dict]:
 
 
 def check_opensearch_domains(session: boto3.Session, region: str) -> list[dict]:
-    es = session.client("es", region_name=region)
+    es = session.client("es", region_name=region, config=BOTO_CONFIG)
     findings = []
     domain_names = [d["DomainName"] for d in es.list_domain_names()["DomainNames"]]
     if not domain_names:
@@ -294,7 +302,7 @@ def check_opensearch_domains(session: boto3.Session, region: str) -> list[dict]:
 
 
 def check_sagemaker_endpoints(session: boto3.Session, region: str) -> list[dict]:
-    sm = session.client("sagemaker", region_name=region)
+    sm = session.client("sagemaker", region_name=region, config=BOTO_CONFIG)
     findings = []
     paginator = sm.get_paginator("list_endpoints")
     for page in paginator.paginate():
@@ -311,7 +319,7 @@ def check_sagemaker_endpoints(session: boto3.Session, region: str) -> list[dict]
 
 
 def check_sagemaker_notebook_instances(session: boto3.Session, region: str) -> list[dict]:
-    sm = session.client("sagemaker", region_name=region)
+    sm = session.client("sagemaker", region_name=region, config=BOTO_CONFIG)
     findings = []
     paginator = sm.get_paginator("list_notebook_instances")
     for page in paginator.paginate():
@@ -336,7 +344,7 @@ def check_sagemaker_notebook_instances(session: boto3.Session, region: str) -> l
 
 
 def check_eks_clusters(session: boto3.Session, region: str) -> list[dict]:
-    eks = session.client("eks", region_name=region)
+    eks = session.client("eks", region_name=region, config=BOTO_CONFIG)
     findings = []
     paginator = eks.get_paginator("list_clusters")
     for page in paginator.paginate():
@@ -369,14 +377,26 @@ CHECKS = [
 def scan(session: boto3.Session, regions: list[str]) -> dict:
     findings, skipped = [], []
     for region in regions:
-        for check in CHECKS:
-            try:
-                findings.extend(check(session, region))
-            except ClientError as err:
-                # One failing region or service must not stop the whole scan.
-                skipped.append({
-                    "region": region,
-                    "check": check.__name__,
-                    "error": err.response["Error"]["Code"],
-                })
+        # Each check is an independent network call (its own boto3 client,
+        # its own AWS API round trip) — CPU-bound work would fight over
+        # Python's GIL and gain nothing from threads, but these checks
+        # spend nearly all their time *waiting* on AWS, not computing, so
+        # a thread that's blocked on one check's network I/O lets another
+        # check's thread run. Running all 10 checks for this region at
+        # once turns "sum of every check's duration" into roughly "the
+        # slowest single check's duration" — the fix for the Lambda timing
+        # out on a region with several slow services.
+        with ThreadPoolExecutor(max_workers=len(CHECKS)) as executor:
+            future_to_check = {executor.submit(check, session, region): check for check in CHECKS}
+            for future in as_completed(future_to_check):
+                check = future_to_check[future]
+                try:
+                    findings.extend(future.result())
+                except ClientError as err:
+                    # One failing check (or region) must not stop the rest.
+                    skipped.append({
+                        "region": region,
+                        "check": check.__name__,
+                        "error": err.response["Error"]["Code"],
+                    })
     return {"findings": findings, "skipped": skipped}

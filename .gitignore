@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+myenv/
+
+# AWS SAM build artifacts
+backend/.aws-sam/
+
+# Local secrets/config that should never be committed
+.env
+*.env

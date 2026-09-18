@@ -1,0 +1,58 @@
+{
+  "Comment": "BillGuard ScanAccount: list the account's enabled regions, scan each one in parallel, then save the combined findings.",
+  "StartAt": "ListRegions",
+  "States": {
+    "ListRegions": {
+      "Type": "Task",
+      "Resource": "${ScannerFunctionArn}",
+      "Parameters": {
+        "mode": "list_regions",
+        "roleArn.$": "$.roleArn",
+        "externalId.$": "$.externalId"
+      },
+      "ResultPath": "$.regions",
+      "Next": "ScanEachRegion"
+    },
+    "ScanEachRegion": {
+      "Type": "Map",
+      "ItemsPath": "$.regions",
+      "MaxConcurrency": 5,
+      "ItemSelector": {
+        "roleArn.$": "$.roleArn",
+        "externalId.$": "$.externalId",
+        "region.$": "$$.Map.Item.Value"
+      },
+      "ItemProcessor": {
+        "ProcessorConfig": { "Mode": "INLINE" },
+        "StartAt": "ScanRegion",
+        "States": {
+          "ScanRegion": {
+            "Type": "Task",
+            "Resource": "${ScannerFunctionArn}",
+            "Retry": [
+              {
+                "ErrorEquals": [
+                  "Lambda.TooManyRequestsException",
+                  "Lambda.ServiceException",
+                  "Lambda.AWSLambdaException",
+                  "Lambda.SdkClientException"
+                ],
+                "IntervalSeconds": 2,
+                "MaxAttempts": 6,
+                "BackoffRate": 2
+              }
+            ],
+            "End": true
+          }
+        }
+      },
+      "ResultPath": "$.scanResults",
+      "Next": "SaveFindings"
+    },
+    "SaveFindings": {
+      "Type": "Task",
+      "Resource": "${SaveFindingsFunctionArn}",
+      "End": true
+    }
+  }
+}

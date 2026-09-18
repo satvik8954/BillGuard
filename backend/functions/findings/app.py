@@ -1,55 +1,53 @@
 """
-GET /findings — Lambda handler (task 5).
+GET /findings — Lambda handler (task 6).
 
-Returns hardcoded fake findings for now, matching the real FINDING# shape
-from CLAUDE.md, so Madhu can build the dashboard UI before the scan
-pipeline (tasks 6-7) exists. Replace FAKE_FINDINGS with a real DynamoDB
-query (Query on PK = USER#<sub>, SK begins_with FINDING#) once ScanAccount
-is writing findings.
+Reads real FINDING# rows for the signed-in user from DynamoDB, now that
+ScanAccount (task 6) actually writes them. Replaces the fake data from
+task 5.
 """
 
 import json
+import os
 
-FAKE_FINDINGS = [
-    {
-        "type": "Unused Elastic IP",
-        "region": "ap-south-1",
-        "resourceId": "eipalloc-0123456789abcdef0",
-        "name": "13.204.175.86",
-        "estDailyCostInr": 10.56,
-        "howToDelete": "EC2 console → Elastic IPs → select it → Actions → Release Elastic IP address",
-        "firstSeen": "2026-09-17T09:00:00Z",
-        "lastSeen": "2026-09-18T09:00:00Z",
-        "status": "active",
-    },
-    {
-        "type": "RDS database instance",
-        "region": "ap-south-1",
-        "resourceId": "billguard-test-db",
-        "name": "billguard-test-db (db.t3.micro)",
-        "estDailyCostInr": 32.0,
-        "howToDelete": "RDS console → Databases → select it → Actions → Delete",
-        "firstSeen": "2026-09-16T09:00:00Z",
-        "lastSeen": "2026-09-18T09:00:00Z",
-        "status": "active",
-    },
-    {
-        "type": "NAT Gateway",
-        "region": "us-east-1",
-        "resourceId": "nat-0123456789abcdef0",
-        "name": "nat-0123456789abcdef0",
-        "estDailyCostInr": 95.04,
-        "howToDelete": "VPC console → NAT Gateways → select it → Actions → Delete NAT gateway",
-        "firstSeen": "2026-09-10T09:00:00Z",
-        "lastSeen": "2026-09-15T09:00:00Z",
-        "status": "resolved",
-    },
-]
+import boto3
+from boto3.dynamodb.conditions import Key
+from botocore.config import Config
+
+TABLE_NAME = os.environ["TABLE_NAME"]
+
+# Fail fast on a slow/unreachable AWS endpoint instead of sitting until the
+# Lambda's own Timeout kills the invocation.
+BOTO_CONFIG = Config(connect_timeout=5, read_timeout=10)
+
+table = boto3.resource("dynamodb", config=BOTO_CONFIG).Table(TABLE_NAME)
 
 
 def handler(event, context):
+    user_sub = event["requestContext"]["authorizer"]["jwt"]["claims"]["sub"]
+
+    response = table.query(
+        KeyConditionExpression=Key("PK").eq(f"USER#{user_sub}") & Key("SK").begins_with("FINDING#")
+    )
+
+    findings = [
+        {
+            "type": item["type"],
+            "region": item["region"],
+            "resourceId": item["resourceId"],
+            "name": item["name"],
+            # DynamoDB gives back Decimal, not float; json.dumps can't
+            # serialize Decimal on its own.
+            "estDailyCostInr": float(item["estDailyCostInr"]),
+            "howToDelete": item["howToDelete"],
+            "firstSeen": item["firstSeen"],
+            "lastSeen": item["lastSeen"],
+            "status": item["status"],
+        }
+        for item in response["Items"]
+    ]
+
     return {
         "statusCode": 200,
         "headers": {"Content-Type": "application/json"},
-        "body": json.dumps({"findings": FAKE_FINDINGS}),
+        "body": json.dumps({"findings": findings}),
     }

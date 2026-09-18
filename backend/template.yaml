@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  BillGuard backend (task 5): Cognito auth, the DynamoDB single table, and
-  the HTTP API with its first two Lambdas.
+  BillGuard backend: Cognito auth, the DynamoDB single table, the HTTP API,
+  and the ScanAccount Step Functions pipeline (task 6).
 
 Globals:
   Function:
@@ -71,6 +71,31 @@ Resources:
           Projection:
             ProjectionType: ALL
 
+  # -- Public hosting for the user-role CloudFormation template ----------
+
+  RoleTemplateBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub billguard-role-template-${AWS::AccountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+
+  RoleTemplateBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref RoleTemplateBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadRoleTemplate
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub arn:aws:s3:::${RoleTemplateBucket}/billguard-role.yaml
+
   # -- API: HTTP API in front of the Lambdas, guarded by Cognito ---------
 
   HttpApi:
@@ -102,6 +127,10 @@ Resources:
     Properties:
       CodeUri: functions/connect_init/
       Handler: app.handler
+      Environment:
+        Variables:
+          ROLE_TEMPLATE_URL: !Sub "https://${RoleTemplateBucket}.s3.${AWS::Region}.amazonaws.com/billguard-role.yaml"
+          SCANNER_ROLE_ARN: !GetAtt ScannerFunctionRole.Arn
       Policies:
         - DynamoDBWritePolicy:
             TableName: !Ref BillGuardTable
@@ -113,11 +142,41 @@ Resources:
             Path: /connect/init
             Method: POST
 
+  ConnectVerifyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/connect_verify/
+      Handler: app.handler
+      Environment:
+        Variables:
+          SCAN_ACCOUNT_STATE_MACHINE_ARN: !Ref ScanAccountStateMachine
+          SCANNER_FUNCTION_ARN: !GetAtt ScannerFunction.Arn
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BillGuardTable
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ScannerFunction
+        - Statement:
+            - Sid: StartScanAccountExecution
+              Effect: Allow
+              Action: states:StartExecution
+              Resource: !Ref ScanAccountStateMachine
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /connect/verify
+            Method: POST
+
   FindingsFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/findings/
       Handler: app.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref BillGuardTable
       Events:
         Api:
           Type: HttpApi
@@ -125,6 +184,94 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /findings
             Method: GET
+
+  ScanFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/scan/
+      Handler: app.handler
+      Environment:
+        Variables:
+          SCAN_ACCOUNT_STATE_MACHINE_ARN: !Ref ScanAccountStateMachine
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BillGuardTable
+        - Statement:
+            - Sid: StartScanAccountExecution
+              Effect: Allow
+              Action: states:StartExecution
+              Resource: !Ref ScanAccountStateMachine
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /scan
+            Method: POST
+
+  ScanLatestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/scan_latest/
+      Handler: app.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref BillGuardTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /scan/latest
+            Method: GET
+
+  # -- ScanAccount pipeline (task 6) --------------------------------------
+  # ScannerFunction imports backend/scanner/checks.py, so its CodeUri is the
+  # whole backend/ folder (not just its own functions/ subfolder) — see
+  # LEARNING.md for why, and the Lambda Layer alternative we deferred.
+  #
+  # ScannerFunctionRole is the ONLY identity user-role/billguard-role.yaml's
+  # trust policy names (TrustedPrincipalArn). Every other function that
+  # needs something done inside a user's account invokes THIS function
+  # (lambda:InvokeFunction) instead of calling sts:AssumeRole itself — see
+  # LEARNING.md's "single trusted identity" section.
+
+  ScannerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: functions.scanner.app.handler
+      Timeout: 120
+      MemorySize: 512
+      Policies:
+        - Statement:
+            - Sid: AssumeUserReadOnlyRole
+              Effect: Allow
+              Action: sts:AssumeRole
+              Resource: "arn:aws:iam::*:role/BillGuardReadOnly"
+
+  SaveFindingsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/save_findings/
+      Handler: app.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BillGuardTable
+
+  ScanAccountStateMachine:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: BillGuardScanAccount
+      DefinitionUri: statemachine/scan_account.asl.json
+      DefinitionSubstitutions:
+        ScannerFunctionArn: !GetAtt ScannerFunction.Arn
+        SaveFindingsFunctionArn: !GetAtt SaveFindingsFunction.Arn
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ScannerFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref SaveFindingsFunction
 
 Outputs:
   ApiUrl:
@@ -139,3 +286,9 @@ Outputs:
   TableName:
     Description: DynamoDB table name
     Value: !Ref BillGuardTable
+  RoleTemplateBucketName:
+    Description: Upload user-role/billguard-role.yaml here after each deploy (see LEARNING.md)
+    Value: !Ref RoleTemplateBucket
+  ScanAccountStateMachineArn:
+    Description: Step Functions state machine that scans a connected account
+    Value: !Ref ScanAccountStateMachine
