@@ -15,6 +15,15 @@ export default function Connect({ signOut }) {
   const [verifyError, setVerifyError] = useState("");
 
   async function handleOpenCloudFormation() {
+    const alreadyOpened = initStatus === "done";
+    if (alreadyOpened) {
+      const proceed = window.confirm(
+        "You already opened CloudFormation once this session. If you already created the " +
+          "stack, opening it again is unnecessary — reopen it below instead. Continue anyway?"
+      );
+      if (!proceed) return;
+    }
+
     setInitStatus("loading");
     setInitError("");
     try {

@@ -1,10 +1,20 @@
 """
 POST /connect/init — Lambda handler (task 5, wired up for real in task 6).
 
-Generates a fresh ExternalId for the signed-in user, saves a "pending"
-profile row, and returns a CloudFormation quick-create URL that creates
-their read-only role (user-role/billguard-role.yaml) with that ExternalId
+Generates an ExternalId for the signed-in user, saves a "pending" profile
+row, and returns a CloudFormation quick-create URL that creates their
+read-only role (user-role/billguard-role.yaml) with that ExternalId
 pre-filled.
+
+Idempotent by design: the role name is fixed (BillGuardReadOnly) and its
+trust policy's sts:ExternalId condition is baked in at stack-create time.
+If a caller invokes init twice while a stack is mid-flight (a reload, a
+second click on "Open CloudFormation", etc.) before generating a new
+ExternalId would silently invalidate the role they already deployed, since
+the already-created role's trust policy still references the old value.
+So: reuse the existing externalId whenever the profile is still "pending".
+Only mint a fresh one when there's no profile yet, or the user is
+deliberately reconnecting ("connected" or "error").
 
 ROLE_TEMPLATE_URL and SCANNER_ROLE_ARN come from real infrastructure now:
 the public S3 bucket holding billguard-role.yaml, and the ScannerFunction's
@@ -33,14 +43,19 @@ table = boto3.resource("dynamodb", config=BOTO_CONFIG).Table(TABLE_NAME)
 
 def handler(event, context):
     user_sub = event["requestContext"]["authorizer"]["jwt"]["claims"]["sub"]
-    external_id = str(uuid.uuid4())
 
-    table.put_item(Item={
-        "PK": f"USER#{user_sub}",
-        "SK": "PROFILE",
-        "externalId": external_id,
-        "status": "pending",
-    })
+    existing_profile = table.get_item(Key={"PK": f"USER#{user_sub}", "SK": "PROFILE"}).get("Item")
+
+    if existing_profile and existing_profile.get("status") == "pending" and "externalId" in existing_profile:
+        external_id = existing_profile["externalId"]
+    else:
+        external_id = str(uuid.uuid4())
+        table.put_item(Item={
+            "PK": f"USER#{user_sub}",
+            "SK": "PROFILE",
+            "externalId": external_id,
+            "status": "pending",
+        })
 
     quick_create_url = (
         "https://console.aws.amazon.com/cloudformation/home"
