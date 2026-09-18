@@ -1,0 +1,662 @@
+/* =====================================================================
+   BillGuard design tokens
+   ---------------------------------------------------------------------
+   Concept: a night monitoring console. Something is still running,
+   unnoticed, in the dark — that's the whole product. Amber = a light
+   left on (cost, attention). Teal = verified safe (read-only, revocable).
+   Serif (Fraunces) is the human voice explaining things; monospace
+   (IBM Plex Mono) is the machine's readout — resource IDs, regions,
+   money. The two voices never mix inside one text block.
+   ===================================================================== */
+
+:root {
+  --bg: #10141a;
+  --surface: #1a2029;
+  --surface-raised: #222a34;
+  --border: #2a323d;
+  --border-soft: #212832;
+
+  --text: #ece7dd;
+  --text-muted: #8b95a5;
+  --text-faint: #5b6472;
+
+  --amber: #e8a23d;
+  --amber-soft: #7a5a2e;
+  --amber-wash: rgba(232, 162, 61, 0.1);
+
+  --teal: #5fbfae;
+  --teal-soft: #2f5750;
+  --teal-wash: rgba(95, 191, 174, 0.1);
+
+  --rust: #d9704f;
+  --rust-wash: rgba(217, 112, 79, 0.12);
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --radius: 3px;
+  --measure: 64ch;
+  --container: 1040px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--text);
+}
+
+p {
+  margin: 0;
+  max-width: var(--measure);
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--amber-soft);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------
+   Layout
+   ------------------------------------------------------------------- */
+
+.page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 0;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.wordmark .dot {
+  color: var(--amber);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.gap-xs {
+  gap: 8px;
+}
+.gap-sm {
+  gap: 14px;
+}
+.gap-md {
+  gap: 28px;
+}
+.gap-lg {
+  gap: 56px;
+}
+
+/* ---------------------------------------------------------------------
+   Typography scale
+   ------------------------------------------------------------------- */
+
+.text-hero {
+  font-size: clamp(2.1rem, 4.6vw, 3.4rem);
+}
+
+.text-h2 {
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+}
+
+.text-h3 {
+  font-size: 1.15rem;
+}
+
+.text-lede {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-faint {
+  color: var(--text-faint);
+}
+
+.text-small {
+  font-size: 0.85rem;
+}
+
+/* ---------------------------------------------------------------------
+   Buttons
+   ------------------------------------------------------------------- */
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn-primary {
+  background: var(--amber);
+  color: #17120a;
+  border-color: var(--amber);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #f0ac4c;
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--text-muted);
+}
+
+.btn-quiet {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 8px 4px;
+}
+
+.btn-quiet:hover:not(:disabled) {
+  color: var(--text);
+}
+
+/* ---------------------------------------------------------------------
+   Inputs
+   ------------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.field input {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 12px 14px;
+}
+
+.field input:focus {
+  border-color: var(--teal);
+}
+
+.field input::placeholder {
+  color: var(--text-faint);
+}
+
+/* ---------------------------------------------------------------------
+   Panels
+   ------------------------------------------------------------------- */
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-soft);
+  border: none;
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------------
+   The hero finding card — the one bold, glowing moment on the landing
+   page. Nothing else on the site glows like this.
+   ------------------------------------------------------------------- */
+
+.hero-finding {
+  background: var(--surface);
+  border: 1px solid var(--amber-soft);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow: 0 0 0 1px rgba(232, 162, 61, 0.05), 0 18px 60px -20px rgba(232, 162, 61, 0.35);
+  width: 100%;
+  max-width: 380px;
+}
+
+.hero-finding .row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+}
+
+.hero-finding .kind {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.hero-finding .cost {
+  font-size: 1.4rem;
+  color: var(--amber);
+  font-weight: 600;
+}
+
+.hero-finding .cost span {
+  font-size: 0.75rem;
+  color: var(--amber-soft);
+  margin-left: 4px;
+}
+
+.hero-finding .meta {
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+  display: inline-block;
+  box-shadow: 0 0 0 0 rgba(232, 162, 61, 0.6);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(232, 162, 61, 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(232, 162, 61, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(232, 162, 61, 0);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Findings list (dashboard) — a plain bordered readout, not a card kit
+   ------------------------------------------------------------------- */
+
+.findings-list {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.finding-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 20px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border-soft);
+  align-items: start;
+}
+
+.finding-row:last-child {
+  border-bottom: none;
+}
+
+.finding-row .type {
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  font-weight: 500;
+}
+
+.finding-row .cost {
+  font-size: 1.05rem;
+  color: var(--amber);
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.finding-row .cost .unit {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  font-weight: 400;
+  margin-left: 3px;
+}
+
+.finding-row .meta {
+  grid-column: 1 / -1;
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.finding-row .howto {
+  grid-column: 1 / -1;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.finding-row.resolved {
+  opacity: 0.55;
+}
+
+.finding-row.resolved .cost {
+  color: var(--text-faint);
+}
+
+/* ---------------------------------------------------------------------
+   Status pills
+   ------------------------------------------------------------------- */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.pill-teal {
+  border-color: var(--teal-soft);
+  color: var(--teal);
+  background: var(--teal-wash);
+}
+
+.pill-amber {
+  border-color: var(--amber-soft);
+  color: var(--amber);
+  background: var(--amber-wash);
+}
+
+/* ---------------------------------------------------------------------
+   Numbered steps — /connect only; the one real sequence in the product
+   ------------------------------------------------------------------- */
+
+.step {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 18px;
+}
+
+.step .index {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--amber);
+  border: 1px solid var(--amber-soft);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------------------------------------------------------------------
+   Scanning sweep — the one loading animation in the whole app
+   ------------------------------------------------------------------- */
+
+.scan-sweep {
+  position: relative;
+  height: 2px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.scan-sweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, var(--teal), transparent);
+  animation: sweep 1.6s ease-in-out infinite;
+}
+
+@keyframes sweep {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* ---------------------------------------------------------------------
+   Empty state
+   ------------------------------------------------------------------- */
+
+.empty-state {
+  text-align: left;
+  padding: 48px 0;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding-left: 28px;
+}
+
+.empty-state .mark {
+  color: var(--teal);
+  font-size: 1.3rem;
+}
+
+/* ---------------------------------------------------------------------
+   Error banner (interface voice, not apologetic)
+   ------------------------------------------------------------------- */
+
+.error-banner {
+  border: 1px solid var(--rust);
+  background: var(--rust-wash);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  font-size: 0.9rem;
+}
+
+/* ---------------------------------------------------------------------
+   Amplify Authenticator theming — override the default look to match
+   the rest of the app instead of shipping Amplify's stock UI kit.
+   ------------------------------------------------------------------- */
+
+[data-amplify-authenticator] {
+  --amplify-colors-background-primary: var(--bg);
+  --amplify-colors-background-secondary: var(--surface);
+  --amplify-colors-font-primary: var(--text);
+  --amplify-colors-font-secondary: var(--text-muted);
+  --amplify-colors-font-interactive: var(--teal);
+  --amplify-colors-brand-primary-10: var(--teal-wash);
+  --amplify-colors-brand-primary-80: var(--teal);
+  --amplify-colors-brand-primary-90: var(--teal);
+  --amplify-colors-brand-primary-100: var(--teal);
+  --amplify-colors-border-primary: var(--border);
+  --amplify-colors-border-secondary: var(--border);
+  --amplify-fonts-default-variable: var(--font-mono);
+  --amplify-fonts-default-static: var(--font-mono);
+  --amplify-radii-small: 3px;
+  --amplify-radii-medium: 3px;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--bg);
+}
+
+/* The Authenticator's actual card container doesn't pick up the color
+   tokens above (Amplify hardcodes it), so override it directly by its
+   stable data attribute instead of fighting the token system. */
+[data-amplify-router] {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+}
+
+[data-amplify-authenticator] .amplify-input,
+[data-amplify-authenticator] .amplify-select {
+  background: var(--bg) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+  border-radius: var(--radius) !important;
+}
+
+[data-amplify-authenticator] .amplify-label {
+  color: var(--text-muted) !important;
+}
+
+[data-amplify-authenticator] .amplify-tabs__list,
+[data-amplify-authenticator] .amplify-tabs__item {
+  border-color: var(--border) !important;
+}
+
+[data-amplify-authenticator] .amplify-field-group__control,
+[data-amplify-authenticator] .amplify-field-group__outer-end {
+  background: var(--bg) !important;
+  border-color: var(--border) !important;
+}
+
+[data-amplify-authenticator] .amplify-button--link,
+[data-amplify-authenticator] [class*="amplify-icon"] {
+  background: transparent !important;
+  color: var(--text-muted) !important;
+}
+
+[data-amplify-authenticator] .amplify-button--primary {
+  background: var(--amber) !important;
+  color: #17120a !important;
+  border-radius: var(--radius) !important;
+}
+
+[data-amplify-authenticator] .amplify-button--link {
+  color: var(--teal) !important;
+}
+
+/* ---------------------------------------------------------------------
+   Motion & responsive
+   ------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot,
+  .scan-sweep::after {
+    animation: none;
+  }
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 56px;
+  align-items: center;
+}
+
+@media (max-width: 780px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-grid > div:last-child {
+    justify-content: flex-start !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 18px;
+  }
+
+  .finding-row {
+    grid-template-columns: 1fr;
+  }
+
+  .finding-row .cost {
+    text-align: left;
+  }
+
+  .hero-finding {
+    max-width: none;
+  }
+}
