@@ -32,6 +32,7 @@ async function request(method, path, body) {
 export const api = {
   connectInit: () => request("POST", "connect/init"),
   connectVerify: (roleArn) => request("POST", "connect/verify", { roleArn }),
+  getConnectStatus: () => request("GET", "connect/status"),
   getFindings: () => request("GET", "findings"),
   getScanLatest: () => request("GET", "scan/latest"),
   startScan: () => request("POST", "scan"),

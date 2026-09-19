@@ -169,6 +169,22 @@ Resources:
             Path: /connect/verify
             Method: POST
 
+  ConnectStatusFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/connect_status/
+      Handler: app.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref BillGuardTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /connect/status
+            Method: GET
+
   FindingsFunction:
     Type: AWS::Serverless::Function
     Properties:
